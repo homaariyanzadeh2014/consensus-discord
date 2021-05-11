@@ -1,11 +1,4 @@
-import {
-	Client,
-	Guild,
-	GuildChannel,
-	Snowflake,
-	TextChannel,
-	User,
-} from "discord.js";
+import { Guild, Snowflake, TextChannel, User } from "discord.js";
 
 class ConsensusManager {
 	private consensusSet: Set<Consensus>;

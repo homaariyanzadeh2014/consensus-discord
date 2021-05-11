@@ -1,5 +1,7 @@
 import { Client, Intents, Interaction } from "discord.js";
 
+require("dotenv").config();
+
 class Bot {
 	private client: Client;
 
@@ -69,5 +71,6 @@ class Bot {
 	}
 }
 
+console.log("==== Konsensüs Bot ====");
 const bot = new Bot();
 bot.start();

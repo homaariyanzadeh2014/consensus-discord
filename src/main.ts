@@ -1,6 +1,7 @@
-import { Client, Intents, Interaction } from "discord.js";
-
 require("dotenv").config();
+
+import { Client, Intents, Interaction } from "discord.js";
+import { CONSENSUS_MANAGER } from "./consensus";
 
 class Bot {
 	private client: Client;
@@ -65,8 +66,16 @@ class Bot {
 		}
 
 		const title = interaction.options[0].value;
+		const consensus = await CONSENSUS_MANAGER.createConsensus(
+			title as string,
+			interaction.member,
+			interaction.guild!!
+		);
+
 		await interaction.reply(
-			`biraz bekle daha bitmedim ben ama bi ara '${title}' açarım`
+			"Konsensüs kanalı " +
+				consensus.getChannel().toString() +
+				" oluşturuldu."
 		);
 	}
 }

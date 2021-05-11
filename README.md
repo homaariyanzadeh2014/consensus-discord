@@ -9,14 +9,17 @@ npm install
 npm run compile
 ```
 
+## Configuring
+
+Copy `.env.example` to `.env` and edit it.
+
+See https://www.npmjs.com/package/dotenv for more information.
+
 ## Running
 
 ```sh
-TOKEN="your.token.here" GUILD="guild.id" npm run start
+npm run start
 ```
-
-You can also use a `.env` file.  
-See https://www.npmjs.com/package/dotenv for more information.
 
 Or use the Docker setup in this repository.
 
@@ -24,5 +27,7 @@ Or use the Docker setup in this repository.
 
 ```sh
 npm install # (after dependencies change)
-TOKEN="your.token.here" GUILD="guild.id" npm run dev
+cp .env.example .env
+# edit .env
+npm run dev
 ```

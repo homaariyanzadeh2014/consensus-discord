@@ -2,3 +2,5 @@ services:
   konsensus:
     environment:
       TOKEN: "your.token.here"
+      GUILD: "1"
+      CATEGORY: "1"

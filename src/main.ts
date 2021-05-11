@@ -37,6 +37,9 @@ class Bot {
 			return;
 		}
 
+		console.log("Loading saved consensus data");
+		await CONSENSUS_MANAGER.load(this.client);
+
 		console.log(`Creating slash command for guild ${guild.name}`);
 		await guild.commands.create({
 			name: "konsensüs",

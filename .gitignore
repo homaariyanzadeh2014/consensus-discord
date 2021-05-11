@@ -4,5 +4,5 @@
 /dev.sh
 /dev.bat
 /package-lock.json
-/package-lock.json
 /.env
+/data

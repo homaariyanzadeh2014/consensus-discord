@@ -2,3 +2,4 @@
 /out
 /docker-compose.*
 /.env
+/data

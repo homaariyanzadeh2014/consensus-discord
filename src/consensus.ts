@@ -1,10 +1,13 @@
-import { Guild, Snowflake, TextChannel, User } from "discord.js";
+import { Client, Guild, Snowflake, TextChannel, User } from "discord.js";
+import { ConsensusDatabase, ConsensusObject, ConsensusVotes } from "./database";
 
 class ConsensusManager {
 	private consensusSet: Set<Consensus>;
+	private database: ConsensusDatabase;
 
 	constructor() {
 		this.consensusSet = new Set<Consensus>();
+		this.database = new ConsensusDatabase();
 	}
 
 	public async createConsensus(
@@ -16,7 +19,19 @@ class ConsensusManager {
 		await consensus.start();
 
 		this.consensusSet.add(consensus);
+		this.save();
+
 		return consensus;
+	}
+
+	public save() {
+		console.log("Saving consensus data");
+		this.database.save(this.consensusSet);
+	}
+
+	public async load(client: Client) {
+		this.consensusSet = await this.database.load(client);
+		console.log("Loaded saved consensus data");
 	}
 }
 
@@ -110,5 +125,21 @@ Lütfen konsensüse ulaşılmasını istediğiniz şeyi detaylıca ve herkesin a
 			.replaceAll(/\s+/g, "-")
 			.replace(/^-*/, "")
 			.replace(/\-*$/, "");
+	}
+
+	public serialize(): ConsensusObject {
+		let votes: ConsensusVotes = {};
+
+		this.votes.forEach((vote, snowflake) => {
+			votes[snowflake] = vote;
+		});
+
+		return {
+			title: this.title,
+			creator: this.creator.id,
+			votes: votes,
+			locked: this.locked,
+			guild: this.guild.id,
+		};
 	}
 }

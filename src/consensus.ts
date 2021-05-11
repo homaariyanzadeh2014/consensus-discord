@@ -72,10 +72,9 @@ export class Consensus {
 
 	private async informCreator() {
 		await this.channel?.send(
-			"Konsensüs kanalı oluşturuldu " +
-				this.creator.toString() +
-				". Fakat bu kanalı şu anda sadece sen görebilirsin." +
-				"\n\nLütfen konsensüse ulaşılmasını istediğiniz şeyi detaylıca ve herkesin anlayabileceği bir şekilde yazın. Yazdıktan sonra herkesin konsensüse katılabilmesi için `/aç` komutunu kullanın."
+			`Konsensüs kanalı oluşturuldu ${this.creator.toString()}. Fakat bu kanalı şu anda sadece sen görebilirsin.
+				
+Lütfen konsensüse ulaşılmasını istediğiniz şeyi detaylıca ve herkesin anlayabileceği bir şekilde yazın. Yazdıktan sonra herkesin konsensüse katılabilmesi için \`/aç\` komutunu kullanın.`
 		);
 	}
 

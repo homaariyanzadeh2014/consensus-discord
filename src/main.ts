@@ -26,7 +26,7 @@ class Bot {
 		const guildId = process.env.GUILD;
 
 		if (guildId === undefined) {
-			console.error("Missing environment variable GUILD=''");
+			console.error("Missing environment variable GUILD");
 			return;
 		}
 
@@ -73,9 +73,7 @@ class Bot {
 		);
 
 		await interaction.reply(
-			"Konsensüs kanalı " +
-				consensus.getChannel().toString() +
-				" oluşturuldu."
+			`Konsensüs kanalı ${consensus.getChannel().toString()} oluşturuldu.`
 		);
 	}
 }

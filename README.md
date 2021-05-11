@@ -12,7 +12,7 @@ npm run compile
 ## Running
 
 ```sh
-TOKEN="your.token.here" npm run start
+TOKEN="your.token.here" GUILD="guild.id" npm run start
 ```
 
 Or use the Docker setup in this repository.
@@ -21,5 +21,5 @@ Or use the Docker setup in this repository.
 
 ```sh
 npm install # (after dependencies change)
-TOKEN="your.token.here" npm run dev
+TOKEN="your.token.here" GUILD="guild.id" npm run dev
 ```

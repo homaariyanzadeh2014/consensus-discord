@@ -2,3 +2,4 @@
 /out
 /docker-compose.override.yml
 /dev.sh
+/package-lock.json

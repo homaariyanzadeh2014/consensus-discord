@@ -1,0 +1,8 @@
+version: "3"
+
+services:
+  konsensus:
+    build: .
+    restart: always
+    container_name: konsensus
+    user: 1000:1000

@@ -1,0 +1,4 @@
+services:
+  konsensus:
+    environment:
+      TOKEN: "your.token.here"

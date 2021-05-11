@@ -1,4 +1,4 @@
-import { Client, Intents } from "discord.js";
+import { Client, Intents, Interaction } from "discord.js";
 
 class Bot {
 	private client: Client;
@@ -9,6 +9,10 @@ class Bot {
 		});
 
 		this.client.on("ready", async () => await this.ready());
+		this.client.on(
+			"interaction",
+			async (interaction) => await this.interaction(interaction)
+		);
 	}
 
 	public start() {
@@ -45,6 +49,23 @@ class Bot {
 		});
 
 		console.log(`Bot ready as ${this.client.user?.tag}`);
+	}
+
+	private async interaction(interaction: Interaction) {
+		if (!interaction.isCommand()) {
+			// Not a slash command
+			return;
+		}
+
+		if (interaction.commandName !== "konsensüs") {
+			// Not /konsensüs
+			return;
+		}
+
+		const title = interaction.options[0].value;
+		await interaction.reply(
+			`biraz bekle daha bitmedim ben ama bi ara '${title}' açarım`
+		);
 	}
 }
 

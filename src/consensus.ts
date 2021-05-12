@@ -1,5 +1,6 @@
 import { Client, Guild, Snowflake, TextChannel, User } from "discord.js";
 import { ConsensusDatabase, ConsensusObject, ConsensusVotes } from "./database";
+import process from "process";
 
 class ConsensusManager {
 	private consensusSet: Set<Consensus>;
@@ -36,6 +37,14 @@ class ConsensusManager {
 }
 
 export const CONSENSUS_MANAGER = new ConsensusManager();
+
+process.once("SIGTERM", (_) => {
+	CONSENSUS_MANAGER.save();
+});
+
+process.once("SIGINT", (_) => {
+	CONSENSUS_MANAGER.save();
+});
 
 export enum Vote {
 	UPVOTE,

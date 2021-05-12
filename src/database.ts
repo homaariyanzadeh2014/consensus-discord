@@ -24,7 +24,7 @@ export class ConsensusDatabase {
 		this.db = JSDB.open("data");
 	}
 
-	save(consensuses: Set<Consensus>) {
+	async save(consensuses: Set<Consensus>) {
 		const serialize: ConsensusObject[] = [];
 
 		consensuses.forEach((consensus) => {
@@ -32,11 +32,20 @@ export class ConsensusDatabase {
 		});
 
 		// TODO: diff this maybe?
+
+		if (this.db.c !== undefined) {
+			await this.db.c.__table__.delete();
+		}
+
 		this.db.c = serialize;
 	}
 
 	async load(client: Client): Promise<Set<Consensus>> {
 		const cset = new Set<Consensus>();
+
+		if (this.db.c === undefined) {
+			return cset;
+		}
 
 		for (const consensus of this.db.c) {
 			const guild = client.guilds.resolve(consensus.guild)!!;

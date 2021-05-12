@@ -19,14 +19,14 @@ class ConsensusManager {
 		await consensus.start();
 
 		this.consensusSet.add(consensus);
-		this.save();
+		await this.save();
 
 		return consensus;
 	}
 
-	public save() {
+	public async save() {
 		console.log("Saving consensus data");
-		this.database.save(this.consensusSet);
+		await this.database.save(this.consensusSet);
 	}
 
 	public async load(client: Client) {

@@ -140,6 +140,34 @@ Lütfen konsensüse ulaşılmasını istediğiniz şeyi detaylıca ve herkesin a
 			votes: votes,
 			locked: this.locked,
 			guild: this.guild.id,
+			channel: this.channel?.id,
 		};
+	}
+
+	public deserialize(guild: Guild, serialized: ConsensusObject) {
+		this.locked = serialized.locked;
+
+		let votes = new Map<Snowflake, Vote>();
+		for (const snowflake in serialized.votes) {
+			if (
+				Object.prototype.hasOwnProperty.call(
+					serialized.votes,
+					snowflake
+				)
+			) {
+				const vote = serialized.votes[snowflake];
+
+				votes.set(snowflake, vote);
+			}
+		}
+
+		this.votes = votes;
+
+		if (serialized.channel) {
+			const ch = guild.channels.resolve(serialized.channel);
+			if (ch != null && ch.isText()) {
+				this.channel = ch as TextChannel;
+			}
+		}
 	}
 }

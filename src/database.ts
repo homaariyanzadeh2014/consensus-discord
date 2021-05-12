@@ -51,12 +51,13 @@ export class ConsensusDatabase {
 		}
 
 		for (const consensus of db) {
+			// TODO: !! is bad
 			const guild = client.guilds.resolve(consensus.guild)!!;
 			const creator = (await guild?.members.fetch(consensus.creator))
-				.user;
+				.user!!;
 
-			// TODO: this is bad
-			const cons = new Consensus(consensus.title, creator!!, guild);
+			const cons = new Consensus(consensus.title, creator, guild);
+			cons.deserialize(guild, consensus);
 			cset.add(cons);
 		}
 

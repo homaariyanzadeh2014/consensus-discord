@@ -9,7 +9,6 @@
 		"dev": "npm run compile && npm run start"
 	},
 	"dependencies": {
-		"@small-tech/jsdb": "https://github.com/small-tech/jsdb#f5702a24a2f41ec6be495fdfeb11250376437405",
 		"discord.js": "https://github.com/discordjs/discord.js#0e40f9b86826ba50aa3840807fb86e1bce6b1c3d"
 	},
 	"devDependencies": {

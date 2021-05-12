@@ -1,9 +1,8 @@
-import JSDB from "@small-tech/jsdb";
 import { Client, Snowflake } from "discord.js";
 import { Consensus, Vote } from "./consensus";
+import { promises as fs } from "fs";
 
-// https://github.com/small-tech/jsdb#unsupported-data-types
-// map and set unsupported
+const DATA_PATH = "data/consensus.json";
 
 export type ConsensusVotes = { [index: string]: Vote };
 
@@ -18,12 +17,6 @@ export interface ConsensusObject {
 }
 
 export class ConsensusDatabase {
-	private db;
-
-	constructor() {
-		this.db = JSDB.open("data");
-	}
-
 	async save(consensuses: Set<Consensus>) {
 		const serialize: ConsensusObject[] = [];
 
@@ -31,23 +24,33 @@ export class ConsensusDatabase {
 			serialize.push(consensus.serialize());
 		});
 
-		// TODO: diff this maybe?
-
-		if (this.db.c !== undefined) {
-			await this.db.c.__table__.delete();
-		}
-
-		this.db.c = serialize;
+		const json = JSON.stringify(serialize);
+		await fs.writeFile(DATA_PATH, json);
 	}
 
 	async load(client: Client): Promise<Set<Consensus>> {
 		const cset = new Set<Consensus>();
+		let db: ConsensusObject[] | undefined;
 
-		if (this.db.c === undefined) {
+		try {
+			const file = await fs.readFile(DATA_PATH);
+			db = JSON.parse(file.toString());
+		} catch (e) {
+			if (e.code == "ENOENT") {
+				console.warn(
+					"Error reading consensus data. Is it the first time you're starting the bot? Returning empty just in case!"
+				);
+			} else {
+				console.error("Error reading consensus data!");
+				throw e;
+			}
+		}
+
+		if (db === undefined) {
 			return cset;
 		}
 
-		for (const consensus of this.db.c) {
+		for (const consensus of db) {
 			const guild = client.guilds.resolve(consensus.guild)!!;
 			const creator = (await guild?.members.fetch(consensus.creator))
 				.user;

@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-import { Client, Intents, Interaction } from "discord.js";
+import { Client, CommandInteraction, Intents, Interaction } from "discord.js";
 import { CONSENSUS_MANAGER } from "./consensus";
 
 class Bot {
@@ -40,7 +40,7 @@ class Bot {
 		console.log("Loading saved consensus data");
 		await CONSENSUS_MANAGER.load(this.client);
 
-		console.log(`Creating slash command for guild ${guild.name}`);
+		console.log(`Creating slash commands for guild ${guild.name}`);
 		await guild.commands.create({
 			name: "konsensüs",
 			description: "Yeni konsensüs başlatır",
@@ -54,6 +54,11 @@ class Bot {
 			],
 		});
 
+		await guild.commands.create({
+			name: "aç",
+			description: "Konsensüs kanalını herkese açar",
+		});
+
 		console.log(`Bot ready as ${this.client.user?.tag}`);
 	}
 
@@ -63,11 +68,14 @@ class Bot {
 			return;
 		}
 
-		if (interaction.commandName !== "konsensüs") {
-			// Not /konsensüs
-			return;
+		if (interaction.commandName == "konsensüs") {
+			this.consensusCommand(interaction);
+		} else if (interaction.commandName == "aç") {
+			this.unlockCommand(interaction);
 		}
+	}
 
+	private async consensusCommand(interaction: CommandInteraction) {
 		const title = interaction.options[0].value;
 		const consensus = await CONSENSUS_MANAGER.createConsensus(
 			title as string,
@@ -78,6 +86,22 @@ class Bot {
 		await interaction.reply(
 			`Konsensüs kanalı ${consensus.getChannel().toString()} oluşturuldu.`
 		);
+	}
+
+	private async unlockCommand(interaction: CommandInteraction) {
+		const consensus = CONSENSUS_MANAGER.getFromChannelId(
+			interaction.channelID!!
+		);
+
+		if (consensus === undefined) {
+			await interaction.reply(
+				`Bu komut sadece konsensüs kanallarında çalışır.`
+			);
+			return;
+		}
+
+		await consensus.unlock();
+		await interaction.reply(`Konsensüs herkese açılmıştır.`);
 	}
 }
 

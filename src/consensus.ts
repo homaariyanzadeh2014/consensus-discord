@@ -34,6 +34,23 @@ class ConsensusManager {
 		this.consensusSet = await this.database.load(client);
 		console.log("Loaded saved consensus data");
 	}
+
+	public getFromChannelId(channelId: Snowflake): Consensus | undefined {
+		let ret: Consensus | undefined = undefined;
+
+		this.consensusSet.forEach((c) => {
+			if (ret != undefined) {
+				return;
+			}
+
+			const chan = c.getChannel();
+			if (chan != undefined && chan.id == channelId) {
+				ret = c;
+			}
+		});
+
+		return ret;
+	}
 }
 
 export const CONSENSUS_MANAGER = new ConsensusManager();

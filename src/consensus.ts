@@ -194,6 +194,7 @@ Lütfen konsensüse ulaşılmasını istediğiniz şeyi detaylıca ve herkesin a
 			this.getChannelName(),
 			{
 				reason: this.title,
+				topic: this.title,
 				type: "text",
 				parent: CATEGORY,
 				position: 0,

@@ -1,14 +1,23 @@
-import { Client, Guild, Snowflake, TextChannel, User } from "discord.js";
-import { ConsensusDatabase, ConsensusObject, ConsensusVotes } from "./database";
-import process from "process";
+import {
+	CategoryChannel,
+	Channel,
+	Client,
+	Guild,
+	Snowflake,
+	Permissions,
+	TextChannel,
+	User,
+	Message,
+	SystemChannelFlags,
+} from "discord.js";
+
+const CATEGORY = process.env.CATEGORY;
 
 class ConsensusManager {
 	private consensusSet: Set<Consensus>;
-	private database: ConsensusDatabase;
 
 	constructor() {
 		this.consensusSet = new Set<Consensus>();
-		this.database = new ConsensusDatabase();
 	}
 
 	public async createConsensus(
@@ -16,23 +25,57 @@ class ConsensusManager {
 		creator: User,
 		guild: Guild
 	): Promise<Consensus> {
-		const consensus = new Consensus(title, creator, guild);
-		await consensus.start();
+		const consensus = new Consensus(guild, undefined, title);
+		await consensus.start(creator);
 
 		this.consensusSet.add(consensus);
-		await this.save();
 
 		return consensus;
 	}
 
-	public async save() {
-		console.log("Saving consensus data");
-		await this.database.save(this.consensusSet);
+	public parseConsensus(channel: TextChannel): Consensus {
+		const consensus = new Consensus(channel.guild, channel, undefined);
+
+		return consensus;
 	}
 
-	public async load(client: Client) {
-		this.consensusSet = await this.database.load(client);
-		console.log("Loaded saved consensus data");
+	public async load(guild: Guild) {
+		const categoryChannel = guild.channels.cache.get(
+			CATEGORY!!
+		) as CategoryChannel;
+
+		categoryChannel.children.forEach(async (child) => {
+			if (!child.isText()) return;
+
+			console.log(`Parsing #${child.name} channel`);
+
+			const consensus = this.parseConsensus(child as TextChannel);
+
+			const messages = await child.messages.fetch({
+				limit: 100,
+			});
+
+			Array.from(messages.values())
+				.reverse()
+				.forEach(async (msg) => {
+					if (msg.author.id === guild.client.user!!.id) return;
+
+					let v = 0;
+					if (msg.content.includes("👍")) v += 1;
+					else if (msg.content.includes("👎")) v -= 1;
+
+					if (v != 0)
+						await consensus.vote(
+							msg,
+							v == 1 ? Vote.UPVOTE : Vote.DOWNVOTE,
+							false
+						);
+				});
+
+			console.log(`Parsed #${child.name}`);
+
+			this.consensusSet.add(consensus);
+		});
 	}
 
 	public getFromChannelId(channelId: Snowflake): Consensus | undefined {
@@ -55,25 +98,13 @@ class ConsensusManager {
 
 export const CONSENSUS_MANAGER = new ConsensusManager();
 
-process.once("SIGTERM", (_) => {
-	CONSENSUS_MANAGER.save();
-});
-
-process.once("SIGINT", (_) => {
-	CONSENSUS_MANAGER.save();
-});
-
 export enum Vote {
 	UPVOTE,
 	DOWNVOTE,
-	ABSTAIN,
 }
 
-const CATEGORY = process.env.CATEGORY;
-
 export class Consensus {
-	private title: string;
-	private creator: User;
+	private title?: string;
 	private votes: Map<Snowflake, Vote>;
 
 	private locked: boolean;
@@ -81,28 +112,67 @@ export class Consensus {
 	private guild: Guild;
 	private channel?: TextChannel;
 
-	constructor(title: string, creator: User, guild: Guild) {
-		this.title = title;
-		this.creator = creator;
+	constructor(guild: Guild, channel?: TextChannel, title?: string) {
 		this.votes = new Map<Snowflake, Vote>();
 
-		this.locked = true;
+		if (channel !== undefined) {
+			this.locked = !channel
+				.permissionsFor(guild.roles.everyone)
+				.has(Permissions.FLAGS.VIEW_CHANNEL);
+		} else this.locked = true;
 
+		this.title = title;
 		this.guild = guild;
+		this.channel = channel;
 	}
 
-	async start() {
-		await this.createChannel();
-		await this.informCreator();
+	async start(creator: User) {
+		await this.createChannel(creator);
+		await this.informCreator(creator);
 	}
 
-	public vote(member: Snowflake, vote: Vote) {
-		this.votes.set(member, vote);
+	public async vote(msg: Message, vote: Vote, reply: boolean = true) {
+		if (this.votes.get(msg.author.id) == vote) return;
+
+		this.votes.set(msg.author.id, vote);
+
+		let upvotes = 0,
+			downvotes = 0;
+		this.votes.forEach((vote) => {
+			if (vote == Vote.UPVOTE) upvotes += 1;
+			else if (vote == Vote.DOWNVOTE) downvotes += 1;
+		});
+
+		if (reply)
+			await msg.reply(
+				`${upvotes} 👍                    ${downvotes} 👎`
+					.replaceAll("0", "0️⃣")
+					.replaceAll("1", "1️⃣")
+					.replaceAll("2", "2️⃣")
+					.replaceAll("3", "3️⃣")
+					.replaceAll("4", "4️⃣")
+					.replaceAll("5", "5️⃣")
+					.replaceAll("6", "6️⃣")
+					.replaceAll("7", "7️⃣")
+					.replaceAll("8", "8️⃣")
+					.replaceAll("9", "9️⃣")
+			);
 	}
 
 	public async unlock() {
+		const messages = await this.channel?.messages.fetch({
+			limit: 100,
+		});
+		Array.from(messages!!.values())
+			.reverse()
+			.forEach(async (msg) => {
+				if (msg.author.id !== this.guild.client.user!!.id) return;
+				await msg.delete();
+			});
+
 		await this.channel?.updateOverwrite(this.guild.roles.everyone, {
 			VIEW_CHANNEL: true,
+			SEND_MESSAGES: true,
 		});
 		this.locked = false;
 	}
@@ -111,15 +181,15 @@ export class Consensus {
 		await this.channel?.setName(name);
 	}
 
-	private async informCreator() {
+	private async informCreator(creator: User) {
 		await this.channel?.send(
-			`Konsensüs kanalı oluşturuldu ${this.creator.toString()}. Fakat bu kanalı şu anda sadece sen görebilirsin.
+			`Konsensüs kanalı oluşturuldu ${creator.toString()}. Fakat bu kanalı şu anda sadece sen görebilirsin.
 				
 Lütfen konsensüse ulaşılmasını istediğiniz şeyi detaylıca ve herkesin anlayabileceği bir şekilde yazın. Yazdıktan sonra herkesin konsensüse katılabilmesi için \`/aç\` komutunu kullanın.`
 		);
 	}
 
-	private async createChannel() {
+	private async createChannel(creator: User) {
 		this.channel = (await this.guild.channels.create(
 			this.getChannelName(),
 			{
@@ -130,8 +200,9 @@ Lütfen konsensüse ulaşılmasını istediğiniz şeyi detaylıca ve herkesin a
 			}
 		)) as TextChannel;
 
-		await this.channel.updateOverwrite(this.creator, {
+		await this.channel.updateOverwrite(creator, {
 			VIEW_CHANNEL: true,
+			SEND_MESSAGES: true,
 		});
 	}
 
@@ -139,65 +210,16 @@ Lütfen konsensüse ulaşılmasını istediğiniz şeyi detaylıca ve herkesin a
 		return this.locked;
 	}
 
-	public getCreator(): User {
-		return this.creator;
-	}
-
 	public getChannel(): TextChannel {
 		return this.channel!!;
 	}
 
 	public getChannelName(): string {
-		return this.title
-			.toLowerCase()
+		return this.title!!.toLowerCase()
 			.replaceAll("-", " ")
 			.replaceAll(/[^a-zA-Z0-9 \pşüçöğı]+/g, "")
 			.replaceAll(/\s+/g, "-")
 			.replace(/^-*/, "")
 			.replace(/\-*$/, "");
-	}
-
-	public serialize(): ConsensusObject {
-		let votes: ConsensusVotes = {};
-
-		this.votes.forEach((vote, snowflake) => {
-			votes[snowflake] = vote;
-		});
-
-		return {
-			title: this.title,
-			creator: this.creator.id,
-			votes: votes,
-			locked: this.locked,
-			guild: this.guild.id,
-			channel: this.channel?.id,
-		};
-	}
-
-	public deserialize(guild: Guild, serialized: ConsensusObject) {
-		this.locked = serialized.locked;
-
-		let votes = new Map<Snowflake, Vote>();
-		for (const snowflake in serialized.votes) {
-			if (
-				Object.prototype.hasOwnProperty.call(
-					serialized.votes,
-					snowflake
-				)
-			) {
-				const vote = serialized.votes[snowflake];
-
-				votes.set(snowflake, vote);
-			}
-		}
-
-		this.votes = votes;
-
-		if (serialized.channel) {
-			const ch = guild.channels.resolve(serialized.channel);
-			if (ch != null && ch.isText()) {
-				this.channel = ch as TextChannel;
-			}
-		}
 	}
 }

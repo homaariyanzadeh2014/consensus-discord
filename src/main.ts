@@ -6,8 +6,11 @@ import {
 	IntegrationApplication,
 	Intents,
 	Interaction,
+	Message,
+	SystemChannelFlags,
 } from "discord.js";
-import { CONSENSUS_MANAGER } from "./consensus";
+
+import { CONSENSUS_MANAGER, Vote } from "./consensus";
 
 class Bot {
 	private client: Client;
@@ -18,6 +21,7 @@ class Bot {
 		});
 
 		this.client.on("ready", async () => await this.ready());
+		this.client.on("message", async (msg) => await this.message(msg));
 		this.client.on(
 			"interaction",
 			async (interaction) => await this.interaction(interaction)
@@ -44,7 +48,7 @@ class Bot {
 		}
 
 		console.log("Loading saved consensus data");
-		await CONSENSUS_MANAGER.load(this.client);
+		await CONSENSUS_MANAGER.load(guild);
 
 		console.log(`Creating slash commands for guild ${guild.name}`);
 		await guild.commands.create({
@@ -79,6 +83,24 @@ class Bot {
 		} else if (interaction.commandName == "aç") {
 			this.unlockCommand(interaction);
 		}
+	}
+
+	private async message(msg: Message) {
+		if (msg.author.id === this.client.user!!.id) return;
+
+		const consensus = CONSENSUS_MANAGER.getFromChannelId(msg.channel.id);
+		if (consensus === undefined) return;
+
+		let v = 0;
+		if (msg.content.includes("👍")) v += 1;
+		else if (msg.content.includes("👎")) v -= 1;
+
+		if (v != 0)
+			await consensus.vote(
+				msg,
+				v == 1 ? Vote.UPVOTE : Vote.DOWNVOTE,
+				true
+			);
 	}
 
 	private async consensusCommand(interaction: CommandInteraction) {

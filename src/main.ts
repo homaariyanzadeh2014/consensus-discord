@@ -1,6 +1,12 @@
 require("dotenv").config();
 
-import { Client, CommandInteraction, Intents, Interaction } from "discord.js";
+import {
+	Client,
+	CommandInteraction,
+	IntegrationApplication,
+	Intents,
+	Interaction,
+} from "discord.js";
 import { CONSENSUS_MANAGER } from "./consensus";
 
 class Bot {
@@ -100,8 +106,14 @@ class Bot {
 			return;
 		}
 
-		await consensus.unlock();
-		await interaction.reply(`Konsensüs herkese açılmıştır.`);
+		if (consensus.isLocked()) {
+			await interaction.reply("Konsensüs herkese açılmıştır.");
+			await consensus.unlock();
+		} else {
+			await interaction.reply(
+				"Bu konsensüs zaten herkese açık durumdadır."
+			);
+		}
 	}
 }
 

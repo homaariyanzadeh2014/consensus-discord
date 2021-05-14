@@ -139,6 +139,10 @@ Lütfen konsensüse ulaşılmasını istediğiniz şeyi detaylıca ve herkesin a
 		return this.locked;
 	}
 
+	public getCreator(): User {
+		return this.creator;
+	}
+
 	public getChannel(): TextChannel {
 		return this.channel!!;
 	}
